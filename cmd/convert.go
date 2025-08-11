@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -52,15 +53,26 @@ func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
 				return err
 			}
 			// format <TARGET_CURR> <AMOUNT>
-			// TODO: validate that args[0] is a valid currency code
+			if !IsValidCurrencyCode(args[0]) {
+				return fmt.Errorf("error: %s is not a valid currency code", args[0])
+			}
 			return nil
 		}
 		// format <AMOUNT> <TARGET_CURR>
-		// TODO: validate that args[1] is a valid currency code
+		if !IsValidCurrencyCode(args[1]) {
+			return fmt.Errorf("error: %s is not a valid currency code", args[1])
+		}
 		return nil
 	default:
 		return errors.New("too many arguments")
 	}
+}
+
+// IsValidCurrencyCode return true if the given string `code` is a currency
+// code like "USD", "CAD", etc.
+func IsValidCurrencyCode(code string) bool {
+	// HACK: clearly not a real validation but that's what it is.
+	return len(code) == 3
 }
 
 func ConvertCmdRunE(cmd *cobra.Command, args []string) error {
