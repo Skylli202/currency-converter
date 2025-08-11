@@ -51,6 +51,24 @@ func TestValidateConvertCmdArgs(t *testing.T) {
 			args:    []string{"CAD", "123"},
 			wantErr: false,
 		},
+		{
+			name:    "two arg - invalid (no amount)",
+			cmd:     nil,
+			args:    []string{"foo", "bar"},
+			wantErr: true,
+		},
+		{
+			name:    "two arg - invalid (not a valid currency code)",
+			cmd:     nil,
+			args:    []string{"123", "NOT A VALID CURRENCY CODE"},
+			wantErr: true,
+		},
+		{
+			name:    "two arg - invalid (not a valid currency code reverse)",
+			cmd:     nil,
+			args:    []string{"NOT A VALID CURRENCY CODE", "123"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
