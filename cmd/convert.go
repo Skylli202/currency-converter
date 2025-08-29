@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -30,10 +32,50 @@ currency-converter convert 1234 GBP
 // When specifying all three arguments the order can either be "amount from to" or "from to amount".
 currency-converter convert 1234 USD CAD
 currency-converter convert EUR GBP 1234`,
-	RunE: ConvertRunE,
+	Args: ValidateConvertCmdArgs,
+	RunE: ConvertCmdRunE,
 }
 
-func ConvertRunE(cmd *cobra.Command, args []string) error {
+func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
+	switch len(args) {
+	case 0:
+		return nil
+	case 1:
+		_, err := strconv.ParseFloat(args[0], 64)
+		return err
+	case 2:
+		// format <?> <?>
+		_, err := strconv.ParseFloat(args[0], 64)
+		if err != nil {
+			_, err := strconv.ParseFloat(args[1], 64)
+			if err != nil {
+				// format <NaN> <NaN> --> return err because none of the args is a float
+				return err
+			}
+			// format <TARGET_CURR> <AMOUNT>
+			if !IsValidCurrencyCode(args[0]) {
+				return fmt.Errorf("error: %s is not a valid currency code", args[0])
+			}
+			return nil
+		}
+		// format <AMOUNT> <TARGET_CURR>
+		if !IsValidCurrencyCode(args[1]) {
+			return fmt.Errorf("error: %s is not a valid currency code", args[1])
+		}
+		return nil
+	default:
+		return errors.New("too many arguments")
+	}
+}
+
+// IsValidCurrencyCode return true if the given string `code` is a currency
+// code like "USD", "CAD", etc.
+func IsValidCurrencyCode(code string) bool {
+	// HACK: clearly not a real validation but that's what it is.
+	return len(code) == 3
+}
+
+func ConvertCmdRunE(cmd *cobra.Command, args []string) error {
 	return errors.New("not implemented")
 }
 
