@@ -8,6 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const defaultFromCurrency = "USD"
+const errInvalidCurrencyCodeFmt = "error: %s is not a valid currency code"
+
 // convertCmd represents the convert command
 var convertCmd = &cobra.Command{
 	Use:   "convert [amount] [from] [to]",
@@ -36,7 +39,7 @@ currency-converter convert EUR GBP 1234`,
 	RunE: ConvertCmdRunE,
 }
 
-func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
+func ValidateConvertCmdArgs(_ *cobra.Command, args []string) error {
 	switch len(args) {
 	case 0:
 		return nil
@@ -54,13 +57,13 @@ func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
 			}
 			// format <TARGET_CURR> <AMOUNT>
 			if !IsValidCurrencyCode(args[0]) {
-				return fmt.Errorf("error: %s is not a valid currency code", args[0])
+				return fmt.Errorf(errInvalidCurrencyCodeFmt, args[0])
 			}
 			return nil
 		}
 		// format <AMOUNT> <TARGET_CURR>
 		if !IsValidCurrencyCode(args[1]) {
-			return fmt.Errorf("error: %s is not a valid currency code", args[1])
+			return fmt.Errorf(errInvalidCurrencyCodeFmt, args[1])
 		}
 		return nil
 	case 3:
@@ -69,23 +72,23 @@ func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
 		_, err2 := strconv.ParseFloat(args[2], 64)
 		if err0 != nil && err2 != nil {
 			// format <Nan> <?> <NaN> --> return err because neither the first nor last arguments are float.
-			return fmt.Errorf("error: %s is not a valid currency code", args[0])
+			return fmt.Errorf(errInvalidCurrencyCodeFmt, args[0])
 		} else if err0 != nil {
 			// format <FROM_CURR> <TARGET_CURR> <AMOUNT>
 			if !IsValidCurrencyCode(args[0]) {
-				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+				return fmt.Errorf(errInvalidCurrencyCodeFmt, args[1])
 			}
 			if !IsValidCurrencyCode(args[1]) {
-				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+				return fmt.Errorf(errInvalidCurrencyCodeFmt, args[1])
 			}
 			return nil
 		} else if err2 != nil {
 			// format <AMOUNT> <FROM_CURR> <TARGET_CURR>
 			if !IsValidCurrencyCode(args[1]) {
-				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+				return fmt.Errorf(errInvalidCurrencyCodeFmt, args[1])
 			}
 			if !IsValidCurrencyCode(args[2]) {
-				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+				return fmt.Errorf(errInvalidCurrencyCodeFmt, args[1])
 			}
 			return nil
 		} else {
@@ -102,6 +105,49 @@ func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
 func IsValidCurrencyCode(code string) bool {
 	// HACK: clearly not a real validation but that's what it is.
 	return len(code) == 3
+}
+
+func ParseConvertCmdArgs(_ *cobra.Command, args []string) (float64, string, string) {
+	switch len(args) {
+	case 0:
+		return 0, "", ""
+	case 1:
+		amt, err := strconv.ParseFloat(args[0], 64)
+		if err != nil {
+			return 0, "", ""
+		}
+		return amt, "", ""
+	case 2:
+		// format <?> <?>
+		amt, err := strconv.ParseFloat(args[0], 64)
+		if err != nil {
+			// format <NaN> <?>
+			amt, err = strconv.ParseFloat(args[1], 64)
+			if err != nil {
+				// format <NaN> <NaN>
+				return 0, "", ""
+			}
+			return amt, defaultFromCurrency, args[0]
+		}
+		return amt, defaultFromCurrency, args[1]
+	case 3:
+		// format <?> <?> <?>
+		amt, err := strconv.ParseFloat(args[0], 64)
+		if err != nil {
+			// format <FROM> <TARGET> <?>
+			amt, err = strconv.ParseFloat(args[2], 64)
+			if err != nil {
+				// format <FROM> <TARGET> <NaN>
+				return 0, "", ""
+			}
+			// format <FROM> <TARGET> <AMOUNT>
+			return amt, args[0], args[1]
+		}
+		// format <AMOUNT> <FROM> <TARGET>
+		return amt, args[1], args[2]
+	default:
+		return 0, "", ""
+	}
 }
 
 func ConvertCmdRunE(cmd *cobra.Command, args []string) error {
