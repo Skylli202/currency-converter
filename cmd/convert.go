@@ -63,6 +63,35 @@ func ValidateConvertCmdArgs(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("error: %s is not a valid currency code", args[1])
 		}
 		return nil
+	case 3:
+		// format <?> <?> <?>
+		_, err0 := strconv.ParseFloat(args[0], 64)
+		_, err2 := strconv.ParseFloat(args[2], 64)
+		if err0 != nil && err2 != nil {
+			// format <Nan> <?> <NaN> --> return err because neither the first nor last arguments are float.
+			return fmt.Errorf("error: %s is not a valid currency code", args[0])
+		} else if err0 != nil {
+			// format <FROM_CURR> <TARGET_CURR> <AMOUNT>
+			if !IsValidCurrencyCode(args[0]) {
+				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+			}
+			if !IsValidCurrencyCode(args[1]) {
+				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+			}
+			return nil
+		} else if err2 != nil {
+			// format <AMOUNT> <FROM_CURR> <TARGET_CURR>
+			if !IsValidCurrencyCode(args[1]) {
+				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+			}
+			if !IsValidCurrencyCode(args[2]) {
+				return fmt.Errorf("error: %s is not a valid currency code", args[1])
+			}
+			return nil
+		} else {
+			// format <AMOUNT> <?> <AMOUNT>
+			return fmt.Errorf("error: you cannot provide two amonts")
+		}
 	default:
 		return errors.New("too many arguments")
 	}
