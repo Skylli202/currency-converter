@@ -14,8 +14,8 @@ var convertCmd = &cobra.Command{
 	Short: "convert currencies",
 	Long: `Convert an amount from a currency to another currency.
 The commmand can be called without any argument. The command will prompt the user for
-the amount and the from/to currencies. The command also accept argument(s). If one
-argument is provided then it is expected to be the amount. If two arguments are 
+the amount and the from/to currencies. The command also accept one, two or three argument(s).
+If one argument is provided then it is expected to be the amount. If two arguments are 
 provided then it is expected to have one number (the amount) and one currency code
 (the to currency). The from currency will default to "USD". if three arguments are
 provided then it is expected to either have, in that order, "amt from to" or "from to amt".`,
